@@ -38,10 +38,9 @@ public class TestRunController {
 
 
     private final TestRunnerService runnerService;
-    private final TestRunQueryService queryService;
+    private final TestRunQueryService testRunQueryService;
     private final TestCommandService commandService;
     private final CancellationRegistry cancellationRegistry;
-    private final TestRunQueryService testRunQueryService;
     private final TestMapper testMapper;
 
     @PostMapping
@@ -59,19 +58,12 @@ public class TestRunController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/run")
     public ResponseEntity<?> run(@PathVariable Long id) {
-        if (queryService.findById(id).isEmpty()) {
+        if (testRunQueryService.findById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         runnerService.run(id).subscribe();
         return ResponseEntity.accepted().build();
     }
-
-
-//    @GetMapping
-//    public ResponseEntity<List<TestRunResponse>> getAll(Authentication auth) {
-//        var list = queryService.list(auth).stream().map(testMapper::toResponse).toList();
-//        return ResponseEntity.ok(list);
-//    }
 
 
     @GetMapping()
@@ -124,7 +116,7 @@ public class TestRunController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TestRunResponse> detail(@PathVariable Long id) {
-        return queryService.findById(id)
+        return testRunQueryService.findById(id)
                 .map(testMapper::toResponse)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -137,7 +129,7 @@ public class TestRunController {
             log.warn("When processing mode is SERIAL, the pool size must be 1");
             return ResponseEntity.badRequest().build();
         }
-        var existing = queryService.findById(id);
+        var existing = testRunQueryService.findById(id);
         if (existing.isEmpty())
             return ResponseEntity.notFound().build();
 
@@ -174,7 +166,7 @@ public class TestRunController {
 
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Void> cancel(@PathVariable Long id) {
-        var test = queryService.findById(id);
+        var test = testRunQueryService.findById(id);
         if (test.isEmpty())
             return ResponseEntity.notFound().build();
 
@@ -192,7 +184,7 @@ public class TestRunController {
 
     @GetMapping("/{id}/hw-samples")
     public ResponseEntity<List<HwSampleDto>> hwSeries(@PathVariable Long id) {
-        var samples = queryService.getHwSamples(id);
+        var samples = testRunQueryService.getHwSamples(id);
         return ResponseEntity.ok(samples);
     }
 

@@ -9,8 +9,7 @@ import cz.uhk.loadtesterapp.model.enums.TestStatus;
 import cz.uhk.loadtesterapp.repository.TestRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,9 +35,8 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TestRunnerServiceImpl implements TestRunnerService {
-
-    private static final Logger log = LoggerFactory.getLogger(TestRunnerServiceImpl.class);
 
     private final ApiRequestService apiRequestService;
     private final TestRepository testRepository;
@@ -80,7 +78,7 @@ public class TestRunnerServiceImpl implements TestRunnerService {
                       Integer concurrency = prep.run().getConcurrency();
                       if (totalRequests == null || concurrency == null) {
                           return finishFailure(prep.run(),
-                                  new IllegalStateException("STEADY scenari requires totalRequests and concurrency"));
+                                   new IllegalStateException("STEADY scenario requires totalRequests and concurrency"));
                       }
                         return executeAndSummarize(prep.run(), prep.reqSnapshot())
                                 .flatMap(summary ->{
@@ -353,7 +351,7 @@ public class TestRunnerServiceImpl implements TestRunnerService {
         if (run.getPoolSizeOrCap() != null)
             b.replaceQueryParam("size", run.getPoolSizeOrCap());
         if (run.getDelayMs() != null)
-            b.replaceQueryParam("delay", run.getDelayMs());
+            b.replaceQueryParam("delayMs", run.getDelayMs());
         return b.build(true).toUriString();
     }
 
@@ -372,7 +370,7 @@ public class TestRunnerServiceImpl implements TestRunnerService {
                     return apiRequestService.send(reqSnapshot)
                             .map((ResponseEntity<String> resp) -> {
                                 long clientMs = (System.nanoTime() - t0) / 1_000_000;
-                                int status = resp.getStatusCodeValue();
+                                int status = resp.getStatusCode().value();
                                 Long serverMs = null, queueMs = null;
                                 try {
                                     String body = resp.getBody();

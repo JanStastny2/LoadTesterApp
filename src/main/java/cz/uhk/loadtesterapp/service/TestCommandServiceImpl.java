@@ -28,7 +28,7 @@ public class TestCommandServiceImpl implements TestCommandService {
     @Transactional
     public TestRun create(TestRun test, Authentication auth) {
         var principal = (MyUserDetails) auth.getPrincipal();
-        test.setCreatedBy(userService.getUserById(principal.getUserId()));
+        test.setCreatedBy(userService.getUserById(principal.getUserId()).orElse(null));
         test.setStatus(TestStatus.CREATED);
         test.setCreatedAt(Instant.now());
         return repo.save(test);
@@ -94,8 +94,8 @@ public class TestCommandServiceImpl implements TestCommandService {
     @Transactional
     public Optional<TestRun> cancel(Long id) {
         return repo.findById(id).map(entity -> {
-            if (entity.getStatus() != TestStatus.CREATED) {
-                throw new IllegalStateException("Only CREATED tests can be canceled.");
+            if (entity.getStatus() != TestStatus.CREATED && entity.getStatus() != TestStatus.WAITING) {
+                throw new IllegalStateException("Only CREATED or WAITING tests can be canceled.");
             }
             entity.setStatus(TestStatus.CANCELLED);
             entity.setFinishedAt(Instant.now());

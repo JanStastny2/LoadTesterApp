@@ -6,9 +6,6 @@ import cz.uhk.loadtesterapp.model.entity.User;
 import cz.uhk.loadtesterapp.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.http.client.reactive.AbstractClientHttpConnectorProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,8 +22,6 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
-    private final AbstractClientHttpConnectorProperties abstractClientHttpConnectorProperties;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
@@ -39,10 +34,10 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUser(@PathVariable Long id) {
-//        log.info("GET /api/users/{}", id);
-        var user = userService.getUserById(id);
-        return user != null ? ResponseEntity.ok(userMapper.toUserDto(user))
-                : ResponseEntity.notFound().build();
+        return userService.getUserById(id)
+                .map(userMapper::toUserDto)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -67,18 +62,19 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        if (user != null) {
-            userService.deleteUser(id);
-            return new ResponseEntity<>(HttpStatus.OK);
-        }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return userService.getUserById(id)
+                .<ResponseEntity<?>>map(user -> {
+                    userService.deleteUser(id);
+                    return new ResponseEntity<>(HttpStatus.OK);
+                })
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> update(@PathVariable Long id, @RequestBody UserUpdateRequest req) {
-        var entity = userService.getUserById(id);
+        User entity = userService.getUserById(id)
+                .orElse(null);
         if (entity == null)
             return ResponseEntity.notFound().build();
 

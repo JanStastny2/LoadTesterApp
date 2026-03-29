@@ -4,6 +4,7 @@ import cz.uhk.loadtesterapp.model.entity.User;
 import cz.uhk.loadtesterapp.repository.UserRepository;
 import cz.uhk.loadtesterapp.security.MyUserDetails;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,9 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
 
@@ -24,21 +27,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllUsers() {
+        log.info("Fetching all users");
         return userRepository.findAll();
     }
 
     @Override
     public User saveUser(User user) {
         if(userRepository.existsByUsername(user.getUsername())) {
+            log.error("Username already exists: {}", user.getUsername());
             throw new IllegalArgumentException("Username already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        log.info("Saving new user: {}", user.getUsername());
         return userRepository.save(user);
     }
 
     @Override
-    public User getUserById(Long id) {
-        return userRepository.findById(id).orElse(null);
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
     }
 
     @Override
