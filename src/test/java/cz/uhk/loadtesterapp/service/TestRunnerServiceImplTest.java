@@ -54,7 +54,6 @@ class TestRunnerServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        // Inject real ObjectMapper since @InjectMocks won't wire it from the field above
         var field = getClass().getDeclaredFields();
         try {
             var f = TestRunnerServiceImpl.class.getDeclaredField("objectMapper");
@@ -78,18 +77,12 @@ class TestRunnerServiceImplTest {
 
     @Test
     void run_ShouldReturnError_WhenCalledTwiceConcurrently() {
-        // After first run() starts, isAnyTestRunning = true
-        // Second call should immediately return error
         when(txTemplate.execute(any())).thenAnswer(inv -> {
-            // Simulate long-running test — never complete
             try { Thread.sleep(5000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             return null;
         });
 
-        // Subscribe first call in background
         testRunnerService.run(99L).subscribe();
-
-        // Second call should be rejected
         Mono<TestRun> secondCall = testRunnerService.run(99L);
         StepVerifier.create(secondCall)
                 .expectErrorMatches(ex -> ex instanceof IllegalStateException

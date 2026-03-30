@@ -63,8 +63,6 @@ class TestRunControllerTest {
     @MockitoBean
     private TestMapper testMapper;
 
-    // --- GET /api/tests ---
-
     @Test
     @WithMockUser(username = "user", roles = "USER")
     void list_ShouldReturnPagedResults() throws Exception {
@@ -82,8 +80,6 @@ class TestRunControllerTest {
         mockMvc.perform(get("/api/tests"))
                 .andExpect(status().isUnauthorized());
     }
-
-    // --- GET /api/tests/{id} ---
 
     @Test
     @WithMockUser(username = "user", roles = "USER")
@@ -105,8 +101,6 @@ class TestRunControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // --- POST /api/tests/{id}/approve ---
-
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")
     void approve_ShouldReturn200_WhenTestIsCreated() throws Exception {
@@ -124,8 +118,6 @@ class TestRunControllerTest {
         mockMvc.perform(post("/api/tests/1/approve").with(csrf()))
                 .andExpect(status().isForbidden());
     }
-
-    // --- POST /api/tests/{id}/run ---
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")
@@ -146,8 +138,6 @@ class TestRunControllerTest {
         mockMvc.perform(post("/api/tests/99/run").with(csrf()))
                 .andExpect(status().isNotFound());
     }
-
-    // --- POST /api/tests/{id}/cancel ---
 
     @Test
     @WithMockUser(username = "user", roles = "USER")
@@ -190,8 +180,6 @@ class TestRunControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // --- DELETE /api/tests/{id} ---
-
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")
     void delete_ShouldReturn200_WhenTestExists() throws Exception {
@@ -209,8 +197,6 @@ class TestRunControllerTest {
         mockMvc.perform(delete("/api/tests/99").with(csrf()))
                 .andExpect(status().isNotFound());
     }
-
-    // --- Helpers ---
 
     private TestRun buildTestRun(Long id, TestStatus status) {
         TestRun run = new TestRun();
