@@ -2,12 +2,10 @@ package cz.uhk.loadtesterapp.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.uhk.loadtesterapp.mapper.TestMapper;
-import cz.uhk.loadtesterapp.model.dto.RequestDefinitionDto;
-import cz.uhk.loadtesterapp.model.dto.TestRunCreateRequest;
 import cz.uhk.loadtesterapp.model.dto.TestRunResponse;
+import cz.uhk.loadtesterapp.model.dto.HwSampleDto;
 import cz.uhk.loadtesterapp.model.entity.CancellationRegistry;
 import cz.uhk.loadtesterapp.model.entity.TestRun;
-import cz.uhk.loadtesterapp.model.enums.HttpMethodType;
 import cz.uhk.loadtesterapp.model.enums.ProcessingMode;
 import cz.uhk.loadtesterapp.model.enums.TestScenario;
 import cz.uhk.loadtesterapp.model.enums.TestStatus;
@@ -17,10 +15,8 @@ import cz.uhk.loadtesterapp.service.TestRunnerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -29,7 +25,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -198,14 +193,80 @@ class TestRunControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    void create_ShouldReturn400_WhenSerialModeAndPoolSizeIsNot1() throws Exception {
+        mockMvc.perform(post("/api/tests")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(buildCreateRequest(ProcessingMode.SERIAL, 2))))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(commandService);
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    void update_ShouldReturn400_WhenSerialModeAndPoolSizeIsNot1() throws Exception {
+        mockMvc.perform(put("/api/tests/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(buildUpdateRequest(ProcessingMode.SERIAL, 2))))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(commandService);
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void reject_ShouldReturn200_WhenTestIsCreated() throws Exception {
+        TestRun run = buildTestRun(1L, TestStatus.REJECTED);
+        when(commandService.reject(1L)).thenReturn(Optional.of(run));
+        when(testMapper.toResponse(run)).thenReturn(buildMockResponse());
+
+        mockMvc.perform(post("/api/tests/1/reject").with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    void reject_ShouldReturn403_ForNonAdmin() throws Exception {
+        mockMvc.perform(post("/api/tests/1/reject").with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    void compare_ShouldReturnItems_ForRequestedIds() throws Exception {
+        when(testRunQueryService.findAllById(anyList()))
+                .thenReturn(java.util.List.of(buildTestRun(1L, TestStatus.FINISHED), buildTestRun(2L, TestStatus.FAILED)));
+
+        mockMvc.perform(get("/api/tests/compare").param("ids", "1", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[1].id").value(2));
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    void hwSeries_ShouldReturnSamples() throws Exception {
+        when(testRunQueryService.getHwSamples(1L))
+                .thenReturn(java.util.List.of(new HwSampleDto(Instant.now(), 12.5, 128.0)));
+
+        mockMvc.perform(get("/api/tests/1/hw-samples"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].cpu").value(12.5))
+                .andExpect(jsonPath("$[0].heapMb").value(128.0));
+    }
+
     private TestRun buildTestRun(Long id, TestStatus status) {
-        TestRun run = new TestRun();
-        run.setId(id);
-        run.setStatus(status);
-        run.setTestScenario(TestScenario.STEADY);
-        run.setProcessingMode(ProcessingMode.SERIAL);
-        run.setCreatedAt(Instant.now());
-        return run;
+        return TestRun.builder()
+                .id(id)
+                .status(status)
+                .testScenario(TestScenario.STEADY)
+                .processingMode(ProcessingMode.SERIAL)
+                .createdAt(Instant.now())
+                .build();
     }
 
     private TestRunResponse buildMockResponse() {
@@ -218,5 +279,27 @@ class TestRunControllerTest {
                 Instant.now(), Instant.now(), Instant.now(),
                 null
         );
+    }
+
+    private Object buildCreateRequest(ProcessingMode processingMode, int poolSizeOrCap) {
+        return java.util.Map.of(
+                "testScenario", "STEADY",
+                "totalRequests", 10,
+                "concurrency", 1,
+                "processingMode", processingMode.name(),
+                "poolSizeOrCap", poolSizeOrCap,
+                "delayMs", 0,
+                "request", java.util.Map.of(
+                        "url", "http://localhost:8081/api/work/records",
+                        "method", "GET",
+                        "headers", java.util.Map.of(),
+                        "body", "",
+                        "contentType", "application/json"
+                )
+        );
+    }
+
+    private Object buildUpdateRequest(ProcessingMode processingMode, int poolSizeOrCap) {
+        return buildCreateRequest(processingMode, poolSizeOrCap);
     }
 }
