@@ -3,7 +3,6 @@ package cz.uhk.loadtesterapp.service;
 import cz.uhk.loadtesterapp.mapper.TestMapper;
 import cz.uhk.loadtesterapp.model.dto.HwSampleDto;
 import cz.uhk.loadtesterapp.model.entity.TestRun;
-import cz.uhk.loadtesterapp.model.entity.User;
 import cz.uhk.loadtesterapp.model.enums.ProcessingMode;
 import cz.uhk.loadtesterapp.model.enums.TestScenario;
 import cz.uhk.loadtesterapp.model.enums.TestStatus;

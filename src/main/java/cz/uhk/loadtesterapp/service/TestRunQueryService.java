@@ -2,7 +2,6 @@ package cz.uhk.loadtesterapp.service;
 
 import cz.uhk.loadtesterapp.model.dto.HwSampleDto;
 import cz.uhk.loadtesterapp.model.entity.TestRun;
-import cz.uhk.loadtesterapp.model.entity.User;
 import cz.uhk.loadtesterapp.model.enums.ProcessingMode;
 import cz.uhk.loadtesterapp.model.enums.TestScenario;
 import cz.uhk.loadtesterapp.model.enums.TestStatus;
@@ -15,8 +14,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TestRunQueryService {
-
-//    List<TestRun> list(Authentication auth);
 
     List<TestRun> findAllById(List<Long> ids);
 

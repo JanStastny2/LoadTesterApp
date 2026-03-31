@@ -3,7 +3,6 @@ package cz.uhk.loadtesterapp.controller;
 
 import cz.uhk.loadtesterapp.model.dto.AdminDashboardStatsDto;
 import cz.uhk.loadtesterapp.service.AdminService;
-import cz.uhk.loadtesterapp.service.AdminServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class AdminController {
 
-    private final AdminServiceImpl adminService;
+    private final AdminService adminService;
 
     @GetMapping("/stats")
     @PreAuthorize("hasRole('ADMIN')")

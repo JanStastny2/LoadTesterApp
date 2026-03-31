@@ -1,6 +1,5 @@
 package cz.uhk.loadtesterapp.service;
 
-import org.springframework.stereotype.Service;
 import reactor.core.Disposable;
 
 import java.net.URI;

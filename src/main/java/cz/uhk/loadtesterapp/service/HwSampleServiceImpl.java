@@ -35,8 +35,6 @@ public class HwSampleServiceImpl implements HwSampleService {
     public Disposable start(Long testId, URI actuatorBase, Duration interval) {
         var client = webClientBuilder.baseUrl(actuatorBase.toString()).build();
         var buf = Collections.synchronizedList(new ArrayList<Sample>());
-//        var testRef = testRepo.getReferenceById(testId);
-
 
         Disposable d = Mono.defer(() -> readAll(client))
                 .repeatWhen(r->r.delayElements(interval))
@@ -99,13 +97,11 @@ public class HwSampleServiceImpl implements HwSampleService {
         }
         hwSampleRepo.saveAll(entities);
 
-        // CPU
         var cpuVals  = samples.stream().map(s -> s.cpu).filter(Objects::nonNull).sorted().toList();
         Double avgCpu = avg(cpuVals);
         Double maxCpu = max(cpuVals);
         Double p95Cpu = p95(cpuVals);
 
-        // Heap
         var heapVals = samples.stream().map(s -> s.heapMb).filter(Objects::nonNull).toList();
         Double avgHeap = avg(heapVals);
         Double maxHeap = max(heapVals);
