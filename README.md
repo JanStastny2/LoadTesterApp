@@ -2,6 +2,25 @@
 
 A custom load testing orchestrator that targets [GrainWeightApp](../GrainWeightApp) (or any HTTP endpoint). Manages the full test lifecycle, executes load scenarios reactively, and collects hardware metrics from Spring Actuator.
 
+## Quick Start
+
+Requirements: Java 21, Maven 3.9+, Docker
+
+1. Start the database:
+   ```bash
+   docker compose up -d
+   ```
+2. Build the application:
+   ```bash
+   mvn clean install
+   ```
+3. Run the application:
+   ```bash
+   java -jar target/LoadTesterApp-0.0.1-SNAPSHOT.jar
+   ```
+
+Application starts on **port 8082**. Database runs on **port 5433**.
+
 ## Architecture
 
 Built with Spring Boot + WebFlux (reactive). Key components:
@@ -90,24 +109,32 @@ Starts at 10 concurrent requests, increases by 30 every 250ms. Stops when:
 server.port=8082
 
 # Database — override via environment variables
-spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/loadtesterdb}
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5433/loadtesterdb}
 spring.datasource.username=${DB_USERNAME:postgres}
 spring.datasource.password=${DB_PASSWORD:admin}
 ```
 
 ## Database Setup
 
-Requires PostgreSQL 14+. Create the database before first run:
+PostgreSQL runs via **Docker Compose** on port **5433**. The `docker-compose.yml` sets up a PostgreSQL 16 container with a named volume for data persistence.
 
-```sql
-CREATE DATABASE loadtesterdb;
+```bash
+docker compose up -d
 ```
 
-Schema is managed by **Flyway** (migrations in `src/main/resources/db/`). Applied automatically on startup.
+Schema is managed by **Flyway** (migrations in `src/main/resources/db/`). Applied automatically on application startup — no manual database creation required.
+
+To stop the database:
+```bash
+docker compose down
+```
+
+To stop and remove all data:
+```bash
+docker compose down -v
+```
 
 ## Build and Run
-
-Requirements: Java 21, Maven 3.9+, PostgreSQL running on localhost:5432
 
 ```bash
 mvn clean install
