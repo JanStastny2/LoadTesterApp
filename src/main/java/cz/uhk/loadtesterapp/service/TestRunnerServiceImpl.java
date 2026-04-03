@@ -44,7 +44,7 @@ public class TestRunnerServiceImpl implements TestRunnerService {
     private final HwSampleService hwSampleService;
     private final TransactionTemplate txTemplate;
 
-    private final Duration interval = Duration.ofMillis(250);
+    private final Duration interval = Duration.ofMillis(50);
 
     private static final int RAMP_START_CONCURRENCY = 10;
     private static final int RAMP_STEP = 30;
@@ -167,7 +167,7 @@ public class TestRunnerServiceImpl implements TestRunnerService {
                         if (dif > 0) {
                             currentCap.set(next);
                             sem.release(dif);
-                            log.info("RAMP-UP: increased concurrency cap from {} to {}", prev, next);
+                            log.debug("RAMP-UP: increased concurrency cap from {} to {}", prev, next);
                         }
                     }
                 });
@@ -221,7 +221,7 @@ public class TestRunnerServiceImpl implements TestRunnerService {
                                 else
                                     failures.incrementAndGet();
 
-                                log.info("[RAMP] {} {} -> {} in {} ms (serverMs={}, queueMs={})",
+                                log.debug("[RAMP] {} {} -> {} in {} ms (serverMs={}, queueMs={})",
                                         reqSnapshot.getMethod(), reqSnapshot.getUrl(), status, clientMs, serverMs, queueMs);
 
                                 return new ExecutionResult(status, clientMs, serverMs, queueMs);
@@ -391,7 +391,7 @@ public class TestRunnerServiceImpl implements TestRunnerService {
                                         }
                                     }
                                 } catch (Exception ignore) {}
-                                log.info("[{}/{}] {} {} -> {} in {} ms (serverMs={}, queueMs={})",
+                                log.debug("[{}/{}] {} {} -> {} in {} ms (serverMs={}, queueMs={})",
                                         i, totalRequests, reqSnapshot.getMethod(), effectiveUrl, status, clientMs, serverMs, queueMs);
                                 return new ExecutionResult(status, clientMs, serverMs, queueMs);
                             })
